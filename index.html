@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLIATE Anuradhapura Student Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;800;900&family=Shadows+Into+Light&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0ea5e9',
+                        secondary: '#38bdf8',
+                        accent: '#2dd4bf',
+                        dark: '#082f49',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800 h-screen flex overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-dark text-white flex flex-col transition-all duration-300 z-20 shadow-2xl">
+        <div class="p-6 flex items-center justify-center border-b border-gray-700">
+            <h1 class="text-2xl font-bold text-center tracking-wider text-secondary"><i class="fas fa-graduation-cap mr-2"></i> SLIATE HUB</h1>
+        </div>
+        <nav class="flex-1 px-4 py-6 space-y-2">
+            <a href="#" id="nav-dashboard" class="flex items-center px-4 py-3 bg-primary rounded-lg transition-colors"><i class="fas fa-tachometer-alt w-6"></i> Dashboard</a>
+            <a href="#" id="nav-students" class="flex items-center px-4 py-3 hover:bg-gray-800 rounded-lg transition-colors"><i class="fas fa-users w-6"></i> Students</a>
+            <a href="#" id="nav-birthday-cards" class="flex items-center px-4 py-3 hover:bg-gray-800 rounded-lg transition-colors"><i class="fas fa-gift w-6"></i> Birthday Cards</a>
+            <a href="#" id="nav-print" class="flex items-center px-4 py-3 hover:bg-gray-800 rounded-lg transition-colors"><i class="fas fa-print w-6"></i> Print Report</a>
+            <a href="#" id="nav-import" class="flex items-center px-4 py-3 hover:bg-gray-800 rounded-lg transition-colors"><i class="fas fa-file-import w-6"></i> Import Data</a>
+        </nav>
+        <div class="p-4 text-xs text-gray-400 text-center border-t border-gray-700">
+            HNDA Batch SIMS &copy; 2026
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+        <!-- Header -->
+        <header class="bg-white shadow-sm py-4 px-8 flex justify-between items-center z-10 border-b border-gray-200">
+            <h2 id="page-title" class="text-2xl font-semibold text-gray-800 tracking-tight">Dashboard</h2>
+            <div class="flex items-center gap-4">
+                <button id="add-student-btn" class="hidden bg-secondary hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg shadow-md transition-all hover:shadow-lg transform hover:-translate-y-0.5"><i class="fas fa-plus mr-2"></i> Add Student</button>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-auto p-8 bg-gray-50" id="main-content">
+            <!-- Dashboard View -->
+            <div id="view-dashboard" class="space-y-6 animate-fade-in">
+                <div class="flex justify-end">
+                    <button id="send-bulk-email-btn" class="bg-dark hover:bg-gray-800 text-white px-5 py-2.5 rounded-lg shadow-md transition-all hover:shadow-lg transform hover:-translate-y-0.5 flex items-center font-semibold"><i class="fas fa-envelope text-accent mr-2"></i> Send Bulk Email</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 flex items-center gap-6 hover:shadow-md transition-shadow">
+                        <div class="bg-sky-100 p-5 rounded-full text-primary">
+                            <i class="fas fa-user-graduate text-3xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 font-semibold uppercase tracking-wider">Total Students</p>
+                            <p class="text-4xl font-bold text-gray-800 mt-1" id="stat-total-students">0</p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 flex items-center gap-6 hover:shadow-md transition-shadow">
+                        <div class="bg-blue-100 p-5 rounded-full text-blue-500">
+                            <i class="fas fa-male text-3xl px-1"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 font-semibold uppercase tracking-wider">Male Students</p>
+                            <p class="text-4xl font-bold text-gray-800 mt-1" id="stat-male-students">0</p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 flex items-center gap-6 hover:shadow-md transition-shadow">
+                        <div class="bg-pink-100 p-5 rounded-full text-pink-500">
+                            <i class="fas fa-female text-3xl px-1"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 font-semibold uppercase tracking-wider">Female Students</p>
+                            <p class="text-4xl font-bold text-gray-800 mt-1" id="stat-female-students">0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                        <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-birthday-cake text-accent mr-2"></i>Upcoming Birthdays</h3>
+                    </div>
+                    <div class="p-6 bg-gray-50/50">
+                        <div id="upcoming-birthdays-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                            <div class="col-span-full text-center text-gray-500 py-8"><i class="fas fa-spinner fa-spin mr-2"></i>Loading upcoming birthdays...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Students View -->
+            <div id="view-students" class="hidden flex flex-col h-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-fade-in">
+                <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                    <div class="relative w-72">
+                        <i class="fas fa-search absolute left-4 top-3.5 text-gray-400"></i>
+                        <input type="text" id="search-input" placeholder="Search students by name, reg no..." class="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-shadow shadow-sm">
+                    </div>
+                    <button id="clear-data-btn" class="text-red-500 hover:text-red-700 hover:bg-red-50 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"><i class="fas fa-trash-alt mr-2"></i> Clear Database</button>
+                </div>
+                <div class="flex-1 overflow-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse min-w-max">
+                        <thead class="bg-gray-50 text-gray-600 text-sm sticky top-0 shadow-sm z-10 whitespace-nowrap">
+                            <tr>
+                                <th class="py-4 px-6 font-semibold border-b">Image</th>
+                                <th class="py-4 px-6 font-semibold border-b">Reg No</th>
+                                <th class="py-4 px-6 font-semibold border-b">NIC Number</th>
+                                <th class="py-4 px-6 font-semibold border-b">Full Name</th>
+                                <th class="py-4 px-6 font-semibold border-b">Name w/ Initials</th>
+                                <th class="py-4 px-6 font-semibold border-b">Nick Name</th>
+                                <th class="py-4 px-6 font-semibold border-b">Gender</th>
+                                <th class="py-4 px-6 font-semibold border-b">Card Name</th>
+                                <th class="py-4 px-6 font-semibold border-b">Birthday</th>
+                                <th class="py-4 px-6 font-semibold border-b">Email</th>
+                                <th class="py-4 px-6 font-semibold border-b">WhatsApp</th>
+                                <th class="py-4 px-6 font-semibold border-b">Mobile</th>
+                                <th class="py-4 px-6 font-semibold border-b">Permanent Address</th>
+                                <th class="py-4 px-6 font-semibold border-b text-right sticky right-0 bg-gray-50 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.1)]">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="students-table-body" class="text-sm divide-y divide-gray-100">
+                            <!-- Rows will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Birthday Cards View -->
+            <div id="view-birthday-cards" class="hidden h-full flex flex-col md:flex-row gap-6 animate-fade-in">
+                <!-- Left Sidebar: Selection -->
+                <div class="w-full md:w-1/3 bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full overflow-hidden">
+                    <div class="p-5 border-b border-gray-100 bg-gray-50">
+                        <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-search mr-2 text-accent"></i>Select Student</h3>
+                        <div class="relative mt-3">
+                            <i class="fas fa-search absolute left-4 top-3.5 text-gray-400"></i>
+                            <input type="text" id="bcard-search-input" placeholder="Search by name..." class="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary">
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-y-auto custom-scrollbar p-3" id="bcard-student-list">
+                        <!-- Injected by JS -->
+                    </div>
+                </div>
+                <!-- Right Sidebar: Preview & Download -->
+                <div class="w-full md:w-2/3 bg-gray-100 rounded-2xl shadow-inner border border-gray-200 flex flex-col items-center justify-center p-8 relative overflow-hidden">
+                    <div id="bcard-placeholder" class="text-center text-gray-400">
+                        <i class="fas fa-magic text-6xl mb-4 text-gray-300"></i>
+                        <h3 class="text-xl font-bold">Select a student to generate a card</h3>
+                    </div>
+                    
+                    <!-- The Card Container -->
+                    <div id="bcard-preview-container" class="hidden relative shadow-2xl rounded-lg overflow-hidden bg-white w-[800px] h-[800px] transform scale-[0.6] md:scale-75 xl:scale-100 origin-top transition-all shrink-0">
+                        
+                        <!-- Student Photo (Bottom Layer) -->
+                        <div class="absolute inset-y-0 right-0 w-[50%] z-0">
+                            <img id="bcard-img" crossorigin="anonymous" src="" class="w-full h-full object-cover object-center">
+                        </div>
+                        
+                        <!-- User's Canva Template (Middle Layer) -->
+                        <!-- IMPORTANT: The Canva PNG must have a TRANSPARENT background on the right side so the student photo shows through! -->
+                        <div class="absolute inset-0 z-10 pointer-events-none">
+                            <img src="birthday-template.png" id="bcard-template-img" class="w-full h-full object-cover" alt="Please place 'birthday-template.png' in this folder" onerror="this.style.display='none'; document.getElementById('template-warning').classList.remove('hidden');">
+                            <div id="template-warning" class="hidden absolute inset-0 bg-white/90 flex flex-col items-center justify-center p-8 text-center backdrop-blur-sm z-50">
+                                <i class="fas fa-exclamation-triangle text-5xl text-amber-500 mb-4"></i>
+                                <h3 class="text-2xl font-bold text-gray-800">Canva Template Missing!</h3>
+                                <p class="text-gray-600 mt-4 text-lg">Please export your Canva design as a PNG.<br>Make sure the right side where the photo goes is <b>Transparent</b>.</p>
+                                <p class="text-gray-600 font-bold mt-4 text-lg">Name the file exactly:<br><code class="bg-gray-200 px-3 py-1 rounded text-red-600">birthday-template.png</code></p>
+                                <p class="text-gray-600 mt-4 text-lg">Place it in the same folder as this <code>index.html</code> file.</p>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Text Overlays (Top Layer) -->
+                        <!-- You can adjust the top-[X%] and left-[X%] values here to perfectly align with your Canva design -->
+                        <div class="absolute z-20 inset-0 pointer-events-none">
+                            
+                            <!-- Name Overlay -->
+                            <div class="absolute top-[40%] left-[8%] w-[42%] flex justify-center transform -rotate-2">
+                                <h2 id="bcard-name" class="text-black text-[3.2rem] whitespace-nowrap leading-none" style="font-family: 'Shadows Into Light', cursive;">Student Name</h2>
+                            </div>
+                            
+                            <!-- Date Overlay -->
+                            <div class="absolute top-[68%] left-[10%] w-[40%] flex justify-center">
+                                <h3 id="bcard-date" class="text-black text-[2.2rem] font-black tracking-wide" style="font-family: 'Montserrat', sans-serif;">2026 May 03</h3>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    
+                    <button id="bcard-download-btn" class="hidden mt-8 px-8 py-3 bg-primary hover:bg-sky-600 text-white font-bold rounded-xl shadow-lg transition-all flex items-center text-lg z-10"><i class="fas fa-download mr-2"></i> Download Card</button>
+                </div>
+            </div>
+
+            <!-- Print Report View -->
+            <div id="view-print" class="hidden h-full flex flex-col lg:flex-row gap-6 animate-fade-in overflow-hidden">
+                <!-- Left Panel: Configurations -->
+                <div class="w-full lg:w-1/3 bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col max-h-full overflow-y-auto custom-scrollbar p-6 space-y-6 flex-shrink-0">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-2"><i class="fas fa-sliders-h mr-2 text-primary"></i>Report Settings</h3>
+                        <p class="text-sm text-gray-500">Configure report headers, layout, and visible columns.</p>
+                    </div>
+
+                    <!-- Title Settings -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-semibold text-gray-700">Document Title</label>
+                        <input type="text" id="print-title" value="Student Information Registry" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-shadow shadow-sm">
+                    </div>
+
+                    <!-- Orientation Settings -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-semibold text-gray-700">Page Orientation</label>
+                        <select id="print-orientation" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-shadow shadow-sm bg-white">
+                            <option value="landscape">Landscape (Recommended for many columns)</option>
+                            <option value="portrait">Portrait (Best for 3-5 columns)</option>
+                        </select>
+                    </div>
+
+                    <!-- Gender Filter Settings -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-semibold text-gray-700">Filter/Group by Gender</label>
+                        <select id="print-gender-filter" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-shadow shadow-sm bg-white">
+                            <option value="all">All Students</option>
+                            <option value="male">Male Students Only</option>
+                            <option value="female">Female Students Only</option>
+                            <option value="split">Split/Grouped by Gender</option>
+                        </select>
+                    </div>
+
+                    <!-- Column Checkboxes -->
+                    <div class="space-y-3">
+                        <label class="block text-sm font-semibold text-gray-700">Columns to Include</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-200">
+                            <label class="flex items-center gap-2.5 cursor-pointer text-sm text-gray-700 font-medium">
+                                <input type="checkbox" id="col-regNo" checked class="w-4.5 h-4.5 text-primary border-gray-300 rounded focus:ring-secondary">
+                                Reg No
+                            </label>
+                            <label class="flex items-center gap-2.5 cursor-pointer text-sm text-gray-700 font-medium">
+                                <input type="checkbox" id="col-nic" checked class="w-4.5 h-4.5 text-primary border-gray-300 rounded focus:ring-secondary">
+                                NIC Number
+                            </label>
+                            <label class="flex items-center gap-2.5 cursor-pointer text-sm text-gray-700 font-medium">
+                                <input type="checkbox" id="col-fullName" checked class="w-4.5 h-4.5 text-primary border-gray-300 rounded focus:ring-secondary">
+                                Full Name
+                            </label>
+                            <label class="flex items-center gap-2.5 cursor-pointer text-sm text-gray-700 font-medium">
+                                <input type="checkbox" id="col-name" class="w-4.5 h-4.5 text-primary border-gray-300 rounded focus:ring-secondary">
+                                Name w/ Initials
+                            </label>
+                            <label class="flex items-center gap-2.5 cursor-pointer text-sm text-gray-700 font-medium">
+                                <input type="checkbox" id="col-nickName" class="w-4.5 h-4.5 text-primary border-gray-300 rounded focus:ring-secondary">
+                                Nick Name
+                            </label>
+                            <label class="flex items-center gap-2.5 cursor-pointer text-sm text-gray-700 font-medium">
+                                <input type="checkbox" id="col-gender" checked class="w-4.5 h-4.5 text-primary border-gray-300 rounded focus:ring-secondary">
+                                Gender
+                            </label>
+                            <label class="flex items-center gap-2.5 cursor-pointer text-sm text-gray-700 font-medium">
+                                <input type="checkbox" id="col-cardName" checked class="w-4.5 h-4.5 text-primary border-gray-300 rounded focus:ring-secondary">
+                                Card Name
+                            </label>
+                            <label class="flex items-center gap-2.5 cursor-pointer text-sm text-gray-700 font-medium">
+                                <input type="checkbox" id="col-birthday" class="w-4.5 h-4.5 text-primary border-gray-300 rounded focus:ring-secondary">
+                                Birthday
+                            </label>
+                            <label class="flex items-center gap-2.5 cursor-pointer text-sm text-gray-700 font-medium">
+                                <input type="checkbox" id="col-email" class="w-4.5 h-4.5 text-primary border-gray-300 rounded focus:ring-secondary">
+                                Email
+                            </label>
+                            <label class="flex items-center gap-2.5 cursor-pointer text-sm text-gray-700 font-medium">
+                                <input type="checkbox" id="col-whatsapp" class="w-4.5 h-4.5 text-primary border-gray-300 rounded focus:ring-secondary">
+                                WhatsApp
+                            </label>
+                            <label class="flex items-center gap-2.5 cursor-pointer text-sm text-gray-700 font-medium">
+                                <input type="checkbox" id="col-mobile" checked class="w-4.5 h-4.5 text-primary border-gray-300 rounded focus:ring-secondary">
+                                Mobile
+                            </label>
+                            <label class="flex items-center gap-2.5 cursor-pointer text-sm text-gray-700 font-medium">
+                                <input type="checkbox" id="col-address" class="w-4.5 h-4.5 text-primary border-gray-300 rounded focus:ring-secondary">
+                                Address
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Print Button -->
+                    <button id="print-generate-btn" class="w-full py-3.5 bg-primary hover:bg-sky-600 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center text-lg transform hover:-translate-y-0.5"><i class="fas fa-file-pdf mr-2"></i> Print & Export PDF</button>
+                </div>
+
+                <!-- Right Panel: Live Preview -->
+                <div class="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full overflow-hidden">
+                    <div class="p-5 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                        <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-eye text-accent mr-2"></i>Live Document Preview</h3>
+                        <span class="text-xs font-semibold text-gray-400 uppercase bg-gray-200 px-2.5 py-1 rounded-full">Interactive</span>
+                    </div>
+                    
+                    <div class="flex-1 overflow-auto bg-gray-100 p-8 flex justify-center custom-scrollbar">
+                        <!-- Preview Sheet Container -->
+                        <div id="print-preview-sheet" class="bg-white p-12 shadow-md border border-gray-200 w-full max-w-[1000px] min-h-[842px] transition-all flex flex-col">
+                            <!-- Report Title -->
+                            <div class="text-center border-b-2 border-dark pb-6 mb-8">
+                                <h1 id="preview-report-title" class="text-2xl font-bold text-dark tracking-tight uppercase">Student Information Registry</h1>
+                                <p class="text-sm text-gray-500 mt-2 font-medium">SLIATE Anuradhapura • HNDA Department</p>
+                                <p class="text-xs text-gray-400 mt-1">Generated Date: <span id="preview-report-date">-</span></p>
+                            </div>
+                            
+                            <!-- Table preview -->
+                            <div class="flex-1 overflow-x-auto">
+                                <table class="w-full text-left text-xs border-collapse border border-gray-300">
+                                    <thead class="bg-gray-100 text-gray-700 font-bold" id="preview-table-head">
+                                        <!-- Dynamic columns -->
+                                    </thead>
+                                    <tbody id="preview-table-body" class="divide-y divide-gray-200 text-gray-600">
+                                        <!-- Dynamic rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Footer -->
+                            <div class="text-center text-[10px] text-gray-400 mt-12 pt-4 border-t border-gray-100">
+                                HNDA Student Information Management System • Page 1 of 1
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Import View -->
+            <div id="view-import" class="hidden h-full flex items-center justify-center animate-fade-in">
+                <div class="bg-white p-12 rounded-3xl shadow-lg border border-gray-100 w-full max-w-2xl text-center">
+                    <div class="inline-block p-6 bg-green-50 rounded-full mb-6">
+                        <i class="fas fa-file-excel text-6xl text-accent"></i>
+                    </div>
+                    <h3 class="text-3xl font-bold text-gray-800 mb-3">Import Excel Data</h3>
+                    <p class="text-gray-500 mb-10 text-lg">Upload your exported Google Forms (.xlsx, .csv) file to populate the student database automatically.</p>
+                    
+                    <label class="cursor-pointer group relative bg-gray-50 hover:bg-blue-50 border-2 border-dashed border-gray-300 hover:border-secondary rounded-2xl p-16 flex flex-col items-center justify-center transition-all">
+                        <i class="fas fa-cloud-upload-alt text-5xl text-gray-400 group-hover:text-secondary mb-5 transition-colors"></i>
+                        <span class="text-gray-600 font-semibold text-lg group-hover:text-secondary transition-colors">Click to browse or drag and drop</span>
+                        <span class="text-sm text-gray-400 mt-2">Supports .xlsx, .xls, .csv files</span>
+                        <input type="file" id="excel-file-input" class="hidden" accept=".xlsx, .xls, .csv">
+                    </label>
+                    <div id="upload-status" class="mt-8 hidden">
+                        <div class="flex items-center justify-center text-secondary font-semibold text-lg bg-blue-50 py-3 rounded-lg">
+                            <i class="fas fa-spinner fa-spin mr-3"></i> Processing your file...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add/Edit Student Modal -->
+    <div id="student-modal" class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden z-50 flex items-center justify-center backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden transform scale-95 opacity-0 transition-all duration-300 flex flex-col max-h-[90vh]" id="student-modal-content">
+            <div class="px-8 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50 flex-shrink-0">
+                <h3 class="text-xl font-bold text-gray-800" id="modal-title">Add Student</h3>
+                <button id="close-modal-btn" class="text-gray-400 hover:text-gray-800 bg-gray-200 hover:bg-gray-300 rounded-full w-8 h-8 flex items-center justify-center transition-colors"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-8 overflow-y-auto custom-scrollbar flex-1">
+                <form id="student-form" class="space-y-5">
+                    <input type="hidden" id="student-id">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Register Number <span class="text-red-500">*</span></label>
+                            <input type="text" id="student-regno" required class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-shadow shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">NIC Number <span class="text-red-500">*</span></label>
+                            <input type="text" id="student-nic" required class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-shadow shadow-sm">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Full Name <span class="text-red-500">*</span></label>
+                            <input type="text" id="student-fullname" required class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-shadow shadow-sm">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Name with Initials</label>
+                            <input type="text" id="student-name" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-shadow shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nick Name</label>
+                            <input type="text" id="student-nickname" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-shadow shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Gender</label>
+                            <select id="student-gender" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-shadow shadow-sm bg-white">
+                                <option value="">Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Card Name</label>
+                            <input type="text" id="student-cardname" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-shadow shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Birthday</label>
+                            <input type="date" id="student-birthday" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-shadow shadow-sm">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
+                            <input type="email" id="student-email" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-shadow shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">WhatsApp Number</label>
+                            <input type="text" id="student-whatsapp" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-shadow shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Mobile Number</label>
+                            <input type="text" id="student-mobile" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-shadow shadow-sm">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Google Drive Image Link</label>
+                            <input type="text" id="student-image" placeholder="https://drive.google.com/file/d/..." class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-shadow shadow-sm">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Permanent Address</label>
+                            <textarea id="student-address" rows="2" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-shadow shadow-sm resize-none"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-6 flex justify-end gap-4 border-t border-gray-100 mt-6">
+                        <button type="button" id="cancel-modal-btn" class="px-6 py-2.5 rounded-xl font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">Cancel</button>
+                        <button type="submit" class="px-6 py-2.5 bg-secondary hover:bg-blue-600 text-white font-semibold rounded-xl shadow-md transition-all hover:shadow-lg transform hover:-translate-y-0.5">Save Student</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Profile Modal -->
+    <div id="view-modal" class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden z-50 flex items-center justify-center backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden transform scale-95 opacity-0 transition-all duration-300 flex flex-col max-h-[90vh]" id="view-modal-content">
+            <div class="px-8 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50 flex-shrink-0">
+                <h3 class="text-xl font-bold text-gray-800">Student Profile</h3>
+                <button id="close-view-btn" class="text-gray-400 hover:text-gray-800 bg-gray-200 hover:bg-gray-300 rounded-full w-8 h-8 flex items-center justify-center transition-colors"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-8 overflow-y-auto custom-scrollbar flex-1 bg-gray-50/50">
+                <div class="flex flex-col sm:flex-row items-center sm:items-start gap-8 mb-8">
+                    <div class="w-32 h-32 rounded-full bg-blue-100 border-4 border-white shadow-lg overflow-hidden flex-shrink-0 relative">
+                        <img id="view-image" src="" alt="Profile" class="w-full h-full object-cover hidden">
+                        <div id="view-image-placeholder" class="absolute inset-0 flex items-center justify-center text-secondary text-4xl font-bold uppercase"></div>
+                    </div>
+                    <div class="text-center sm:text-left pt-2">
+                        <h2 id="view-fullname" class="text-2xl font-bold text-gray-800 mb-1"></h2>
+                        <p id="view-name" class="text-gray-500 font-medium mb-3"></p>
+                        <span id="view-regno" class="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold tracking-wide"></span>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">NIC Number</p>
+                        <p id="view-nic" class="text-gray-800 font-medium"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">Gender</p>
+                        <p id="view-gender" class="text-gray-800 font-medium"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">Card Name</p>
+                        <p id="view-cardname" class="text-gray-800 font-medium"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">Birthday</p>
+                        <p id="view-birthday" class="text-gray-800 font-medium"></p>
+                        <p id="view-bday-countdown" class="text-sm font-bold text-accent mt-1"></p>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">Email Address</p>
+                        <p id="view-email" class="text-gray-800 font-medium"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">Nick Name</p>
+                        <p id="view-nickname" class="text-gray-800 font-medium"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">Mobile Number</p>
+                        <p id="view-mobile" class="text-gray-800 font-medium"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">WhatsApp Number</p>
+                        <p id="view-whatsapp" class="text-gray-800 font-medium"></p>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">Permanent Address</p>
+                        <p id="view-address" class="text-gray-800 font-medium"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="px-8 py-5 border-t border-gray-100 bg-white flex justify-end flex-shrink-0 gap-3">
+                <a id="view-download-btn" href="#" target="_blank" class="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl shadow-sm transition-all flex items-center hidden"><i class="fas fa-download mr-2"></i> Download Photo</a>
+                <button id="view-edit-btn" class="px-6 py-2.5 bg-secondary hover:bg-sky-500 text-white font-semibold rounded-xl shadow-md transition-all hover:shadow-lg"><i class="fas fa-edit mr-2"></i> Edit Profile</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Email Modal -->
+    <div id="bulk-email-modal" class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden z-50 flex items-center justify-center backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform scale-95 opacity-0 transition-all duration-300 flex flex-col" id="bulk-email-modal-content">
+            <div class="px-8 py-5 border-b border-gray-100 flex justify-between items-center bg-dark flex-shrink-0">
+                <h3 class="text-xl font-bold text-white"><i class="fas fa-envelope text-accent mr-2"></i> Compose Bulk Email</h3>
+                <button id="close-bulk-email-btn" class="text-gray-300 hover:text-white bg-white/10 hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center transition-colors"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-8 flex-1">
+                <form id="bulk-email-form" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Subject <span class="text-red-500">*</span></label>
+                        <input type="text" id="bulk-email-subject" required placeholder="Enter email subject" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-shadow shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Message Body <span class="text-red-500">*</span></label>
+                        <textarea id="bulk-email-body" required rows="6" placeholder="Type your message here..." class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent transition-shadow shadow-sm resize-y"></textarea>
+                    </div>
+                    <div class="pt-4 flex items-center justify-between border-t border-gray-100 mt-6">
+                        <button type="button" id="copy-email-list-btn" class="px-5 py-2.5 rounded-xl font-semibold text-gray-700 bg-white hover:bg-gray-50 transition-colors flex items-center border border-gray-300 shadow-sm"><i class="fas fa-clipboard mr-2 text-gray-500"></i> Copy Email List</button>
+                        <div class="flex gap-3">
+                            <button type="button" id="cancel-bulk-email-btn" class="px-6 py-2.5 rounded-xl font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">Cancel</button>
+                            <button type="submit" class="px-6 py-2.5 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl shadow-md transition-all hover:shadow-lg transform hover:-translate-y-0.5 flex items-center"><i class="fab fa-google mr-2"></i> Send via Gmail</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
