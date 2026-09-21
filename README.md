@@ -19,7 +19,11 @@ A web-based student information management dashboard designed for SLIATE student
 * **Styling:** Custom CSS with Responsive Dashboard Architecture
 * **Data Handling:** Client-side Local Storage / IndexedDB integration
 
----
+-------------------------------------------------
+## Web link
+🚀 **Live Demo:** [SLIATE Hub Student Management System](https://cmwijesingha.github.io/sliate-hub-student-management/)
+
+-------------------------------------------------
 
 ## 🚀 How to Run Locally
 
